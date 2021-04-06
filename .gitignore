@@ -1,1 +1,5 @@
 tags
+vmlinux.h
+dns-xdp.o
+dns-xdp
+.output

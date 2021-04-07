@@ -56,7 +56,7 @@ int main() {
 		return 1;
 	}
 
-	if (!skel->progs.xdp_drop) {
+	if (!skel->progs.xdp_app) {
 		fprintf(stderr, "Is the program loaded ?\n");
 		goto cleanup;
 	}
@@ -80,7 +80,7 @@ int main() {
 		goto cleanup;
 	}
 
-	int program_fd = bpf_program__fd(skel->progs.xdp_drop);
+	int program_fd = bpf_program__fd(skel->progs.xdp_app);
 	if (map_fd < 0) {
 		fprintf(stderr, "Failed to get the program fd\n");
 		goto cleanup;

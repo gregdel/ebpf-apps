@@ -35,29 +35,64 @@ int parse_ipv6(void *data, u64 nh_off, void *data_end)
 	return ip6h->nexthdr;
 }
 
+static __always_inline
+int parse_ethernet(void *data, u64 nh_off, void *data_end)
+{
+	struct ethhdr *eth = data;
+	if (eth + 1 > data_end)
+		return -1;
+
+	return bpf_ntohs(eth->h_proto);
+}
+
+static __always_inline
+int parse_dns(void *data, u64 nh_off, void *data_end)
+{
+	struct udphdr *udp = data + nh_off;
+	if (udp + 1 > data_end)
+		return -1;
+
+	return 0;
+}
+
 SEC("xdp")
-int xdp_drop(struct xdp_md *ctx)
+int xdp_app(struct xdp_md *ctx)
 {
 	void *data_end = (void *)(long)ctx->data_end;
 	void *data = (void *)(long)ctx->data;
-	struct ethhdr *eth = data;
-	u64 *value;
-	u16 h_proto;
-	u64 nh_off;
-	u32 ipproto;
+	u64 *value = 0;
+	u64 nh_off = 0;
 
-	nh_off = sizeof(*eth);
+	u16 h_proto = parse_ethernet(data, nh_off, data_end);
+	if (h_proto < 0)
+		return XDP_PASS;
+
+	nh_off += sizeof(struct ethhdr);
 	if (data + nh_off > data_end)
-		return XDP_DROP;
+		return XDP_ABORTED;
 
-	h_proto = eth->h_proto;
-
-	if (h_proto == bpf_htons(ETH_P_IP))
+	u32 ipproto;
+	switch (h_proto) {
+	case ETH_P_IP:
 		ipproto = parse_ipv4(data, nh_off, data_end);
-	else if (h_proto == bpf_htons(ETH_P_IPV6))
+		nh_off += sizeof(struct iphdr);
+		break;
+	case ETH_P_IPV6:
 		ipproto = parse_ipv6(data, nh_off, data_end);
-	else
+		nh_off += sizeof(struct ipv6hdr);
+		break;
+	default:
 		ipproto = 0;
+	}
+
+	if (data + nh_off > data_end)
+		return XDP_ABORTED;
+
+	/* if (ipproto != IPPROTO_UDP) { */
+	/* 	return XDP_PASS; */
+	/* } */
+
+	/* parse_dns(data, nh_off, data_end); */
 
 	value = bpf_map_lookup_elem(&proto_hash, &ipproto);
 	if (value) {

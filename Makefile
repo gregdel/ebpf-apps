@@ -49,6 +49,9 @@ $(OUTPUT) $(OUTPUT)/libbpf:
 	$(call msg,MKDIR,$@)
 	$(Q)mkdir -p $@
 
+vmlinux.h:
+	$(Q)$(BPFTOOL) btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h
+
 # Build libbpf
 $(LIBBPF_OBJ): $(wildcard $(LIBBPF_SRC)/*.[ch] $(LIBBPF_SRC)/Makefile) | $(OUTPUT)/libbpf
 	$(call msg,LIB,$@)

@@ -3,3 +3,4 @@ vmlinux.h
 .output
 dns-xdp
 forward-xdp
+router-xdp

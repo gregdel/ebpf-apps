@@ -21,18 +21,6 @@ static void sig_handler(int sig) {
 	exiting = true;
 }
 
-static void bump_memlock_rlimit(void) {
-	struct rlimit rlim_new = {
-		.rlim_cur	= RLIM_INFINITY,
-		.rlim_max	= RLIM_INFINITY,
-	};
-
-	if (setrlimit(RLIMIT_MEMLOCK, &rlim_new)) {
-		fprintf(stderr, "Failed to increase RLIMIT_MEMLOCK limit!\n");
-		exit(1);
-	}
-}
-
 int main() {
 	struct forward_xdp_bpf *skel;
 	int err = 0;
@@ -46,9 +34,6 @@ int main() {
 
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
-
-	/* Bump RLIMIT_MEMLOCK to create BPF maps */
-	bump_memlock_rlimit();
 
 	skel = forward_xdp_bpf__open();
 	if (!skel) {

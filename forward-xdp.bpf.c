@@ -1,5 +1,3 @@
-#include <string.h>
-
 #include "vmlinux.h"
 #include <bpf/bpf_endian.h>
 #include <bpf/bpf_helpers.h>
@@ -14,10 +12,9 @@ const unsigned char mac_fw[ETH_ALEN] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xff };
 static __always_inline
 int cmp(unsigned const char a[ETH_ALEN], unsigned const char b[ETH_ALEN])
 {
-	for (int i = 0; i < ETH_ALEN; i++) {
+	for (int i = 1; i < ETH_ALEN; i++)
 		if (a[i] != b[i])
 			return -1;
-	}
 
 	return 0;
 }
@@ -44,10 +41,10 @@ int forward(struct xdp_md *ctx)
 
 	// Rewrite the headers
 	if (cmp(eth->h_source, mac_a) != -1)
-		memcpy(eth->h_dest, mac_b, ETH_ALEN);
+		__builtin_memcpy(eth->h_dest, mac_b, ETH_ALEN);
 	if (cmp(eth->h_source, mac_b) != -1)
-		memcpy(eth->h_dest, mac_a, ETH_ALEN);
-	memcpy(eth->h_source, mac_fw, ETH_ALEN);
+		__builtin_memcpy(eth->h_dest, mac_a, ETH_ALEN);
+	__builtin_memcpy(eth->h_source, mac_fw, ETH_ALEN);
 
 	return XDP_TX;
 }

@@ -13,7 +13,7 @@
 #include <bpf/libbpf.h>
 #include "forward-xdp.skel.h"
 
-const char *dev = "lab-fwd";
+const char *dev = "out";
 
 static volatile bool exiting = false;
 
@@ -70,7 +70,7 @@ int main() {
 		XDP_FLAGS_REPLACE &
 		XDP_FLAGS_SKB_MODE;
 
-	err = bpf_set_link_xdp_fd(ifindex, program_fd, xdp_flags);
+	err = bpf_xdp_attach(ifindex, program_fd, xdp_flags, NULL);
 	if (err < 0) {
 		fprintf(stderr, "Failed to set xdp link\n");
 		goto cleanup;
@@ -85,7 +85,7 @@ int main() {
 cleanup:
 	if (program_fd > 0) {
 		printf("Detaching stuff\n");
-		if (bpf_set_link_xdp_fd(ifindex, -1, 0) < 0) {
+		if (bpf_xdp_detach(ifindex, 0, NULL) < 0) {
 			fprintf(stderr, "Failed to dettach xdp program\n");
 		}
 	}
